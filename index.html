@@ -293,7 +293,7 @@ const scoreVal = document.getElementById('scoreVal');
 const finalScoreText = document.getElementById('finalScoreText');
 
 let gameState = 'menu';
-let score = 0, speed = 0, maxSpeed = 3.5;
+let score = 0, speed = 0, maxSpeed = 2.0;
 let playerX = 0, posZ = 0, tilt = 0, frame = 0;
 let keys = { left: false, right: false };
 let cars = [];
@@ -687,7 +687,7 @@ window.addEventListener('resize', resize);
 resize();
 
 function startRace() {
-  score = 0; speed = 0.3; playerX = 0; posZ = 0; tilt = 0; cars = [];
+  score = 0; speed = 0.2; playerX = 0; posZ = 0; tilt = 0; cars = [];
   gameState = 'playing';
   startScreen.style.display = 'none';
   gameOverScreen.style.display = 'none';
@@ -936,7 +936,7 @@ function update() {
   if (gameState === 'menu') { posZ += 10; return; }
   if (gameState !== 'playing') return;
 
-  if (speed < maxSpeed) speed += 0.0006;
+  if (speed < maxSpeed) speed += 0.0003;
   posZ += speed * 35;
   score += Math.floor(speed * 2);
   speedVal.innerText = Math.floor(speed * 90);
@@ -950,13 +950,11 @@ function update() {
   const targetTilt = ((keys.right ? 1 : 0) - (keys.left ? 1 : 0)) * 0.05;
   tilt += (targetTilt - tilt) * 0.15;
 
-  // ===== SPAWN TRAFFIC (no two cars side-by-side or too close) =====
+  // ===== SPAWN TRAFFIC =====
   if (Math.random() < 0.022 + speed * 0.005) {
     const li = Math.floor(Math.random() * LANES.length);
 
-    // Same lane: at least 2500 units gap
     const sameLaneBlocked = cars.some(c => c.lane === li && c.z > 4000 - 2500);
-    // Other lane: at least 800 units gap (avoid side-by-side)
     const otherLaneBlocked = cars.some(c => c.lane !== li && c.z > 4000 - 800);
 
     if (!sameLaneBlocked && !otherLaneBlocked) {
