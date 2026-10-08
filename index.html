@@ -76,7 +76,6 @@
     cursor: pointer; transition: 0.2s;
   }
   .userChip:hover { background: rgba(56,189,248,0.25); border-color: #38bdf8; }
-  .userChip img { width: 30px; height: 30px; border-radius: 50%; }
   .linkBtn { background: none; border: none; color: #fca5a5; cursor: pointer; font-size: 13px; text-decoration: underline; }
 
   #loginBtn {
@@ -252,13 +251,10 @@
     <div class="modalCard">
       <h2>Create Account</h2>
       <p>নাম আর Gmail দিয়ে অ্যাকাউন্ট তৈরি করুন</p>
-
       <label>User Name</label>
       <input type="text" id="inpName" placeholder="যেমন: Rahim" maxlength="20">
-
       <label>Gmail</label>
       <input type="email" id="inpEmail" placeholder="example@gmail.com" maxlength="60">
-
       <div class="mBtnRow">
         <button class="mCreate" onclick="createAccount()">Create Account</button>
         <button class="mCancel" onclick="closeLoginModal()">Cancel</button>
@@ -276,9 +272,7 @@
   </div>
 
 <script>
-// =====================================================
-// SETUP
-// =====================================================
+// ============ SETUP ============
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -945,9 +939,12 @@ function update() {
   scoreVal.innerText = score;
 
   // Player left/right movement
-  if (keys.left && playerX > -0.38) playerX -= 0.022;
-  if (keys.right && playerX < 0.38) playerX += 0.022;
-  const targetTilt = ((keys.right ? 1 : 0) - (keys.left ? 1 : 0)) * 0.04;
+  if (keys.left)  playerX -= 0.028;
+  if (keys.right) playerX += 0.028;
+  if (playerX < -0.38) playerX = -0.38;
+  if (playerX >  0.38) playerX =  0.38;
+
+  const targetTilt = ((keys.right ? 1 : 0) - (keys.left ? 1 : 0)) * 0.05;
   tilt += (targetTilt - tilt) * 0.15;
 
   // Spawn traffic
@@ -992,7 +989,7 @@ function loop() {
 loop();
 
 // =====================================================
-// LOGIN + LIVE + LEADERBOARD (MongoDB via server.js)
+// LOGIN + LIVE + LEADERBOARD
 // =====================================================
 let me = null;
 let onlineData = [];
