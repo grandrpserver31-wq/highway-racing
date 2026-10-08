@@ -4,12 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>3D Highway Real Racing</title>
-
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-<script>
-  window.GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
-</script>
-
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
   body {
@@ -71,7 +65,6 @@
   }
   .mBtn:active { background: rgba(56, 189, 248, 0.6); border-color: #38bdf8; }
 
-  /* ===== LOGIN UI ===== */
   #authBox {
     display: flex; flex-direction: column; align-items: center; gap: 10px;
     margin-bottom: 25px; min-height: 56px;
@@ -85,6 +78,73 @@
   .userChip:hover { background: rgba(56,189,248,0.25); border-color: #38bdf8; }
   .userChip img { width: 30px; height: 30px; border-radius: 50%; }
   .linkBtn { background: none; border: none; color: #fca5a5; cursor: pointer; font-size: 13px; text-decoration: underline; }
+
+  /* ===== LOGIN BUTTON ===== */
+  #loginBtn {
+    padding: 14px 40px; font-size: 17px; font-weight: 800;
+    background: #fff; color: #1f2937; border: none; border-radius: 40px;
+    cursor: pointer; box-shadow: 0 0 20px rgba(255,255,255,0.3);
+    display: flex; align-items: center; gap: 10px; transition: 0.2s;
+  }
+  #loginBtn:hover { transform: scale(1.05); background: #38bdf8; color: #0f172a; }
+
+  /* ===== LOGIN / REGISTER MODAL ===== */
+  #loginModal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: none; justify-content: center; align-items: center;
+    z-index: 200;
+  }
+  #loginModal.open { display: flex; }
+  .modalCard {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 1px solid rgba(56,189,248,0.4);
+    border-radius: 20px;
+    padding: 35px 40px;
+    min-width: 360px;
+    max-width: 420px;
+    box-shadow: 0 0 50px rgba(56,189,248,0.3);
+  }
+  .modalCard h2 {
+    font-size: 26px; font-weight: 900; color: #38bdf8;
+    text-align: center; margin-bottom: 8px;
+  }
+  .modalCard p {
+    font-size: 14px; color: #94a3b8; text-align: center;
+    margin-bottom: 25px;
+  }
+  .modalCard label {
+    display: block; font-size: 13px; color: #cbd5e1;
+    margin-bottom: 6px; font-weight: 700;
+  }
+  .modalCard input {
+    width: 100%; padding: 14px 18px; font-size: 15px;
+    background: rgba(255,255,255,0.06); color: #fff;
+    border: 1px solid rgba(255,255,255,0.15); border-radius: 12px;
+    margin-bottom: 18px; outline: none; transition: 0.2s;
+  }
+  .modalCard input:focus {
+    border-color: #38bdf8; background: rgba(56,189,248,0.08);
+  }
+  .modalCard .mBtnRow {
+    display: flex; gap: 10px; margin-top: 10px;
+  }
+  .modalCard .mCreate {
+    flex: 1; padding: 14px; font-size: 16px; font-weight: 800;
+    background: #0284c7; color: #fff; border: none; border-radius: 30px;
+    cursor: pointer; transition: 0.2s;
+  }
+  .modalCard .mCreate:hover { background: #38bdf8; color: #0f172a; }
+  .modalCard .mCancel {
+    padding: 14px 24px; font-size: 15px; font-weight: 700;
+    background: rgba(255,255,255,0.1); color: #cbd5e1;
+    border: none; border-radius: 30px; cursor: pointer;
+  }
+  .modalCard .mCancel:hover { background: rgba(255,255,255,0.2); }
+  .modalCard .mError {
+    color: #fca5a5; font-size: 13px; text-align: center;
+    margin-top: 12px; min-height: 18px;
+  }
 
   /* ===== USER INFO POPUP ===== */
   #userPopup {
@@ -194,6 +254,26 @@
   <div id="mobileBar">
     <div class="mBtn" id="btnLeft">←</div>
     <div class="mBtn" id="btnRight">→</div>
+  </div>
+
+  <!-- LOGIN / REGISTER MODAL -->
+  <div id="loginModal">
+    <div class="modalCard">
+      <h2>Create Account</h2>
+      <p>নাম আর Gmail দিয়ে অ্যাকাউন্ট তৈরি করুন</p>
+
+      <label>User Name</label>
+      <input type="text" id="inpName" placeholder="যেমন: Rahim" maxlength="20">
+
+      <label>Gmail</label>
+      <input type="email" id="inpEmail" placeholder="example@gmail.com" maxlength="60">
+
+      <div class="mBtnRow">
+        <button class="mCreate" onclick="createAccount()">Create Account</button>
+        <button class="mCancel" onclick="closeLoginModal()">Cancel</button>
+      </div>
+      <div class="mError" id="loginError"></div>
+    </div>
   </div>
 
   <!-- USER INFO POPUP -->
@@ -918,7 +998,7 @@ function loop() {
 loop();
 
 // =====================================================
-// GOOGLE LOGIN + LIVE + LEADERBOARD
+// LOGIN + LIVE + LEADERBOARD (MongoDB via server.js)
 // =====================================================
 let me = null;
 let onlineData = [];
@@ -943,26 +1023,73 @@ function setAuthUI() {
   const pn = document.getElementById('playerName');
 
   if (me) {
-    const nm = me.name || me.email;
+    const nm = me.name || 'User';
     pn.innerText = nm;
     box.innerHTML =
       '<div class="userChip" onclick="openUserPopup()">' +
-        (me.photo ? '<img src="' + esc(me.photo) + '" referrerpolicy="no-referrer">' : '') +
         '<span>' + esc(nm) + '</span>' +
       '</div>' +
       '<button class="linkBtn" onclick="doLogout()">Sign out</button>';
     startBtn.style.display = 'inline-block';
   } else {
     pn.innerText = 'Not logged in';
-    box.innerHTML = '<div class="g_id_signin"></div>';
+    box.innerHTML =
+      '<button id="loginBtn" onclick="openLoginModal()">' +
+        '<span style="font-weight:900;">👤</span> Login' +
+      '</button>' +
+      '<div style="font-size:13px;color:#fbbf24;text-align:center;">খেলার জন্য Login করুন</div>';
     startBtn.style.display = 'none';
-    setTimeout(renderGoogleBtn, 300);
+  }
+}
+
+function openLoginModal() {
+  document.getElementById('loginModal').classList.add('open');
+  document.getElementById('loginError').innerText = '';
+  document.getElementById('inpName').value = '';
+  document.getElementById('inpEmail').value = '';
+  setTimeout(() => document.getElementById('inpName').focus(), 100);
+}
+
+function closeLoginModal() {
+  document.getElementById('loginModal').classList.remove('open');
+}
+
+async function createAccount() {
+  const nameEl = document.getElementById('inpName');
+  const emailEl = document.getElementById('inpEmail');
+  const errEl = document.getElementById('loginError');
+
+  const name = nameEl.value.trim();
+  const email = emailEl.value.trim();
+  errEl.innerText = '';
+
+  if (name.length < 2) { errEl.innerText = 'নাম কমপক্ষে ২ অক্ষরের দিন'; return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.innerText = 'সঠিক Gmail দিন'; return; }
+
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email })
+    });
+    const data = await res.json();
+    if (!data.ok) { errEl.innerText = data.error || 'Login failed'; return; }
+
+    me = data.user;
+    localStorage.setItem('hr_user', JSON.stringify(me));
+    closeLoginModal();
+    setAuthUI();
+    startHeartbeat();
+    loadLive();
+    loadBoard();
+  } catch (e) {
+    errEl.innerText = 'Server error: ' + e.message;
   }
 }
 
 function openUserPopup() {
   if (!me) return;
-  document.getElementById('popupPhoto').src = me.photo || '';
+  document.getElementById('popupPhoto').style.display = 'none';
   document.getElementById('popupName').innerText = me.name || 'User';
   document.getElementById('popupEmail').innerText = me.email || '';
   document.getElementById('userPopup').classList.add('open');
@@ -970,42 +1097,6 @@ function openUserPopup() {
 
 function closeUserPopup() {
   document.getElementById('userPopup').classList.remove('open');
-}
-
-function renderGoogleBtn() {
-  if (!window.google || !google.accounts || me) return;
-  google.accounts.id.initialize({
-    client_id: window.GOOGLE_CLIENT_ID,
-    callback: handleGoogleResponse
-  });
-  const btn = document.querySelector('.g_id_signin');
-  if (btn) {
-    google.accounts.id.renderButton(btn, {
-      theme: 'outline', size: 'large', type: 'standard',
-      text: 'signin_with', shape: 'rectangular'
-    });
-  }
-}
-
-async function handleGoogleResponse(response) {
-  try {
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ credential: response.credential })
-    });
-    const data = await res.json();
-    if (!data.ok) { alert('Login failed'); return; }
-    me = data.user;
-    localStorage.setItem('hr_user', JSON.stringify(me));
-    setAuthUI();
-    startHeartbeat();
-    loadLive();
-    loadBoard();
-  } catch (e) {
-    console.error(e);
-    alert('Login failed: ' + e.message);
-  }
 }
 
 function doLogout() {
@@ -1035,7 +1126,7 @@ function sendOnline(status) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       uid: me.uid, name: me.name, email: me.email,
-      photo: me.photo, status: status
+      photo: '', status: status
     })
   }).catch(() => {});
 }
@@ -1048,9 +1139,7 @@ function startHeartbeat() {
   }, 10000);
 }
 
-function setOnlineStatus(st) {
-  sendOnline(st);
-}
+function setOnlineStatus(st) { sendOnline(st); }
 
 async function saveScore(best) {
   if (!me) return;
@@ -1060,11 +1149,11 @@ async function saveScore(best) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         uid: me.uid, name: me.name, email: me.email,
-        photo: me.photo, best: best
+        photo: '', best: best
       })
     });
     loadBoard();
-  } catch (e) { console.error(e); }
+  } catch (e) {}
 }
 
 async function loadLive() {
@@ -1118,7 +1207,7 @@ function renderBoard() {
 
 const _origStartRace = startRace;
 startRace = function() {
-  if (!me) { alert('আগে Google দিয়ে Login করুন!'); return; }
+  if (!me) { alert('আগে Login করুন!'); return; }
   _origStartRace();
 };
 
