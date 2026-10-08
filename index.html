@@ -65,7 +65,6 @@
   }
   .mBtn:active { background: rgba(56, 189, 248, 0.6); border-color: #38bdf8; }
 
-  /* ================= NEW: LOGIN + LIVE + LEADERBOARD ================= */
   #authBox {
     display: flex; flex-direction: column; align-items: center; gap: 10px;
     margin-bottom: 25px; min-height: 56px;
@@ -85,7 +84,6 @@
   }
   .userChip img { width: 30px; height: 30px; border-radius: 50%; }
   .linkBtn { background: none; border: none; color: #fca5a5; cursor: pointer; font-size: 13px; text-decoration: underline; }
-  #fbNote { font-size: 13px; color: #fbbf24; text-align: center; max-width: 340px; }
 
   #panelBtn {
     position: absolute; top: 20px; right: 20px; z-index: 30;
@@ -144,7 +142,7 @@
     <div class="title">HIGHWAY RACING 3D</div>
     <div class="sub">Realistic Daytime World & Dynamic Speed</div>
     <div id="authBox"></div>
-    <button class="btn" onclick="startRace()">START RACE</button>
+    <button class="btn" id="startBtn" onclick="startRace()" style="display:none;">START RACE</button>
   </div>
 
   <div id="gameOverScreen" class="overlay" style="display: none;">
@@ -178,7 +176,7 @@ let H = window.innerHeight;
 const fov = 250;
 const roadW = 1200;
 const PLAYER_Z = 250;
-const P = 20000;          // looping length of roadside objects
+const P = 20000;
 let cameraH = H * 0.7;
 
 const startScreen = document.getElementById('startScreen');
@@ -229,7 +227,7 @@ const asphaltPat = makePattern('#3d4045', 0.30, 0.16, 160, 5200);
 const grassPat   = makePattern('#3a7a2e', 0.28, 0.14, 160, 5200);
 
 // =====================================================
-// CAR SPRITES (rear view, pre-rendered, realistic shading)
+// CAR SPRITES
 // =====================================================
 function paintGrad(g, y0, y1, col) {
   const gr = g.createLinearGradient(0, y0, 0, y1);
@@ -393,19 +391,16 @@ function makeCarSprite(type, color) {
     g.quadraticCurveTo(18, 116, 60, 112); g.closePath(); g.fill();
     sheen(g, 48, 117, 304, 8);
     g.strokeStyle = shade(color, -0.5); g.lineWidth = 2; g.beginPath(); g.moveTo(34, 160); g.lineTo(366, 160); g.stroke();
-    // spoiler
     g.fillStyle = '#0d0d0f'; g.fillRect(140, 104, 10, 14); g.fillRect(250, 104, 10, 14);
     const wg = g.createLinearGradient(0, 90, 0, 108);
     wg.addColorStop(0, '#34363a'); wg.addColorStop(1, '#050506');
     g.fillStyle = wg; rr(g, 44, 90, 312, 16, 6); g.fill();
     g.fillStyle = 'rgba(255,255,255,0.25)'; g.fillRect(52, 92, 296, 2);
     g.fillStyle = '#0a0a0b'; rr(g, 36, 78, 12, 36, 4); g.fill(); rr(g, 352, 78, 12, 36, 4); g.fill();
-    // lights
     tail(g, gg => { rr(gg, 34, 124, 112, 26, 12); }, 90, 137, 32);
     tail(g, gg => { rr(gg, 254, 124, 112, 26, 12); }, 310, 137, 32);
     tail(g, gg => { rr(gg, 146, 133, 108, 8, 4); }, 200, 137, 22);
     plate(g, 162, 152, 76, 34);
-    // diffuser + exhausts
     g.fillStyle = '#0b0b0d'; g.beginPath(); g.moveTo(58, 190); g.lineTo(342, 190); g.lineTo(354, 208); g.lineTo(46, 208); g.closePath(); g.fill();
     g.strokeStyle = '#2b2b30'; g.lineWidth = 2;
     for (let x = 90; x <= 310; x += 28) { g.beginPath(); g.moveTo(x, 192); g.lineTo(x, 208); g.stroke(); }
@@ -426,7 +421,7 @@ function pickTrafficType() { const r = Math.random(); return r < 0.4 ? 'sedan' :
 const playerSprite = makeCarSprite('sport', '#0b7bd1');
 
 // =====================================================
-// TREE / BUSH SPRITES (pre-rendered, layered foliage)
+// TREE / BUSH SPRITES
 // =====================================================
 function makeBroadleaf(hue, sat) {
   const w = 300, h = 400, c = newCanvas(w, h), g = c.getContext('2d');
@@ -519,7 +514,6 @@ function makeBush() {
 const treeSprites = [makeBroadleaf(108, 46), makeBroadleaf(92, 44), makeBroadleaf(122, 40), makePine()];
 const bushSprite = makeBush();
 
-// Roadside objects (trees, bushes, lamp posts)
 const objs = [];
 for (let z = 0; z < P; z += 110) {
   [-1, 1].forEach(side => {
@@ -604,7 +598,7 @@ resize();
 // GAME CONTROL
 // =====================================================
 function startRace() {
-  score = 0; speed = 0.3; playerX = 0; posZ = 0; tilt = 0; cars = [];   // NEW: slow start (about 27 km/h)
+  score = 0; speed = 0.3; playerX = 0; posZ = 0; tilt = 0; cars = [];
   gameState = 'playing';
   startScreen.style.display = 'none';
   gameOverScreen.style.display = 'none';
@@ -649,14 +643,12 @@ function drawEnvironment() {
   sky.addColorStop(0, '#1d6fd4'); sky.addColorStop(0.5, '#6db5ee'); sky.addColorStop(1, '#d9eefb');
   ctx.fillStyle = sky; ctx.fillRect(0, 0, W, hz + 1);
 
-  // Sun with glow
   const sx = W * 0.75, sy = H * 0.17;
   const glow = ctx.createRadialGradient(sx, sy, 10, sx, sy, 260);
   glow.addColorStop(0, 'rgba(255,250,225,0.95)'); glow.addColorStop(0.2, 'rgba(255,246,210,0.45)'); glow.addColorStop(1, 'rgba(255,246,210,0)');
   ctx.fillStyle = glow; ctx.fillRect(sx - 260, sy - 260, 520, 520);
   ctx.fillStyle = '#fffdf2'; ctx.beginPath(); ctx.arc(sx, sy, 34, 0, Math.PI * 2); ctx.fill();
 
-  // Clouds
   clouds.forEach(cl => {
     cl.x += cl.sp;
     const cw = 340 * cl.s;
@@ -666,10 +658,8 @@ function drawEnvironment() {
   });
   ctx.globalAlpha = 1;
 
-  // Mountains (parallax with steering)
   if (mountCanvas) ctx.drawImage(mountCanvas, -W / 2 - playerX * 50, 0);
 
-  // Ground
   ctx.fillStyle = grassPat; ctx.fillRect(0, hz, W, H - hz);
   const gs = ctx.createLinearGradient(0, hz, 0, H);
   gs.addColorStop(0, 'rgba(120,170,100,0.35)'); gs.addColorStop(1, 'rgba(0,30,0,0.22)');
@@ -696,38 +686,31 @@ function drawRoad() {
     const idx = baseIdx + n;
     const alt = idx % 2 === 0;
 
-    // grass banding
     ctx.fillStyle = alt ? 'rgba(0,35,0,0.12)' : 'rgba(210,255,160,0.05)';
     ctx.fillRect(0, y2, W, y1 - y2 + 1);
 
-    // soil + gravel shoulder
     ctx.fillStyle = '#5a4a35'; quadAt(cx, y1, s1, y2, s2, -0.64, -0.58); ctx.fill();
     quadAt(cx, y1, s1, y2, s2, 0.58, 0.64); ctx.fill();
     ctx.fillStyle = alt ? '#85817a' : '#7b776f';
     quadAt(cx, y1, s1, y2, s2, -0.58, -0.5); ctx.fill();
     quadAt(cx, y1, s1, y2, s2, 0.5, 0.58); ctx.fill();
 
-    // asphalt
     ctx.fillStyle = asphaltPat; quadAt(cx, y1, s1, y2, s2, -0.5, 0.5); ctx.fill();
     ctx.fillStyle = alt ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.02)';
     quadAt(cx, y1, s1, y2, s2, -0.5, 0.5); ctx.fill();
 
-    // tyre tracks
     ctx.fillStyle = 'rgba(0,0,0,0.11)';
     [[-0.355, -0.295], [-0.205, -0.145], [0.145, 0.205], [0.295, 0.355]].forEach(t => { quadAt(cx, y1, s1, y2, s2, t[0], t[1]); ctx.fill(); });
 
-    // edge lines
     ctx.fillStyle = 'rgba(240,240,232,0.95)';
     quadAt(cx, y1, s1, y2, s2, -0.478, -0.458); ctx.fill();
     quadAt(cx, y1, s1, y2, s2, 0.458, 0.478); ctx.fill();
 
-    // dashed centre line
     if (Math.floor(idx / 2) % 2 === 0) {
       ctx.fillStyle = 'rgba(245,245,238,0.95)';
       quadAt(cx, y1, s1, y2, s2, -0.008, 0.008); ctx.fill();
     }
 
-    // guard rails
     [-1, 1].forEach(side => {
       const x1 = cx + side * 0.58 * roadW * s1, x2 = cx + side * 0.58 * roadW * s2;
       const gp = Math.max(0.5, 2 * s1);
@@ -802,7 +785,6 @@ function drawCar(sp, x, z, opts) {
   const dh = dw * sp.h / sp.w;
   const pad = dw * 14 / sp.w;
 
-  // ground shadow
   const sg = ctx.createRadialGradient(p.x, p.y, 1, p.x, p.y, dw * 0.55);
   sg.addColorStop(0, 'rgba(0,0,0,0.65)'); sg.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.save();
@@ -867,7 +849,7 @@ function update() {
   if (gameState === 'menu') { posZ += 10; return; }
   if (gameState !== 'playing') return;
 
-  if (speed < maxSpeed) speed += 0.0006;   // NEW: gradual speed-up (slow start, builds up over ~90 sec)
+  if (speed < maxSpeed) speed += 0.0006;
   posZ += speed * 35;
   score += Math.floor(speed * 2);
   speedVal.innerText = Math.floor(speed * 90);
@@ -878,7 +860,6 @@ function update() {
   const targetTilt = ((keys.right ? 1 : 0) - (keys.left ? 1 : 0)) * 0.04;
   tilt += (targetTilt - tilt) * 0.15;
 
-  // spawn traffic
   if (Math.random() < 0.02 + speed * 0.005) {
     const li = Math.floor(Math.random() * LANES.length);
     const lane = LANES[li];
@@ -890,7 +871,6 @@ function update() {
     }
   }
 
-  // move traffic + collisions (swept so fast cars can't skip through)
   for (let i = cars.length - 1; i >= 0; i--) {
     const c = cars[i];
     const step = speed * 35 - c.v;
@@ -904,7 +884,7 @@ function update() {
       onGameOver(score);
     }
     if (c.z < 20) cars.splice(i, 1);
-    else if (c.z > 6000) cars.splice(i, 1);   // NEW: faster traffic that drives away is removed
+    else if (c.z > 6000) cars.splice(i, 1);
   }
 }
 
@@ -916,9 +896,8 @@ function loop() {
 loop();
 
 // =====================================================
-// NEW: GOOGLE LOGIN + LIVE PLAYERS + LEADERBOARD (Firebase)
+// FIREBASE — Google Login + Live Players + Leaderboard
 // =====================================================
-// >>> এখানে আপনার Firebase config বসান (নিচের গাইড দেখুন) <<<
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_PROJECT.firebaseapp.com",
@@ -927,7 +906,6 @@ const firebaseConfig = {
   appId: "YOUR_APP_ID"
 };
 
-const fbReady = firebaseConfig.apiKey !== "YOUR_API_KEY" && typeof firebase !== 'undefined';
 let me = null, fbAuth = null, fbDb = null;
 let onlineData = {}, scoreData = [];
 
@@ -945,51 +923,91 @@ function showTab(t) {
 
 function setAuthUI() {
   const box = document.getElementById('authBox');
+  const startBtn = document.getElementById('startBtn');
   const pn = document.getElementById('playerName');
-  if (!fbReady) {
-    box.innerHTML = '<div id="fbNote">⚠ Firebase সেটআপ বাকি আছে — এখন Guest হিসেবে খেলা যাবে, Login / Live / Leaderboard চালু হবে না।</div>';
-    return;
-  }
+
   if (me) {
     const nm = me.displayName || me.email;
     pn.innerText = nm;
-    box.innerHTML = '<div class="userChip">' + (me.photoURL ? '<img src="' + esc(me.photoURL) + '" referrerpolicy="no-referrer">' : '') +
-      '<span>' + esc(nm) + '</span></div><button class="linkBtn" onclick="doLogout()">Sign out</button>';
+    box.innerHTML =
+      '<div class="userChip">' +
+        (me.photoURL ? '<img src="' + esc(me.photoURL) + '" referrerpolicy="no-referrer">' : '') +
+        '<span>' + esc(nm) + '</span>' +
+      '</div>' +
+      '<button class="linkBtn" onclick="doLogout()">Sign out</button>';
+    startBtn.style.display = 'inline-block';
   } else {
-    pn.innerText = 'Guest';
-    box.innerHTML = '<button class="gBtn" onclick="doLogin()"><span class="gLogo">G</span> Sign in with Google</button>' +
-      '<div style="font-size:12px;color:#94a3b8;">Sign in করলে আপনার স্কোর Leaderboard-এ উঠবে</div>';
+    pn.innerText = 'Not logged in';
+    box.innerHTML =
+      '<button class="gBtn" onclick="doLogin()"><span class="gLogo">G</span> Sign in with Google</button>' +
+      '<div style="font-size:13px;color:#fbbf24;text-align:center;">খেলার জন্য Google দিয়ে Login করুন</div>';
+    startBtn.style.display = 'none';
   }
 }
 
 function doLogin() {
+  if (!fbAuth) { alert('Firebase load হয়নি।'); return; }
   const provider = new firebase.auth.GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
   fbAuth.signInWithPopup(provider).catch(err => {
     if (err && (err.code === 'auth/popup-blocked' || err.code === 'auth/operation-not-supported-in-this-environment')) {
       fbAuth.signInWithRedirect(provider);
-    } else { console.error(err); }
+    } else {
+      console.error(err);
+      alert('Login failed: ' + err.message);
+    }
   });
 }
+
 function doLogout() {
   if (me && fbDb) fbDb.ref('online/' + me.uid).remove();
-  fbAuth.signOut();
+  fbAuth.signOut().then(() => {
+    me = null;
+    setAuthUI();
+    gameState = 'menu';
+    startScreen.style.display = 'flex';
+    gameOverScreen.style.display = 'none';
+    hud.style.display = 'none';
+  });
 }
+
+const _origStartRace = startRace;
+startRace = function() {
+  if (!me) {
+    alert('আগে Google দিয়ে Login করুন!');
+    return;
+  }
+  _origStartRace();
+};
 
 function goOnline(u) {
   if (!fbDb) return;
   const ref = fbDb.ref('online/' + u.uid);
   ref.onDisconnect().remove();
-  ref.set({ name: u.displayName || u.email, status: gameState === 'playing' ? 'playing' : 'menu' });
+  ref.set({
+    name: u.displayName || u.email,
+    email: u.email || '',
+    photo: u.photoURL || '',
+    status: gameState === 'playing' ? 'playing' : 'menu'
+  });
 }
+
 function setOnlineStatus(st) {
   if (me && fbDb) fbDb.ref('online/' + me.uid + '/status').set(st).catch(() => {});
 }
+
 function onGameOver(s) {
   setOnlineStatus('menu');
   if (!me || !fbDb) return;
   fbDb.ref('scores/' + me.uid).transaction(cur => {
-    if (cur && cur.best >= s) return;   // keep the old best
-    return { uid: me.uid, name: me.displayName || me.email, photo: me.photoURL || '', best: s };
+    if (cur && cur.best >= s) return;
+    return {
+      uid: me.uid,
+      name: me.displayName || me.email,
+      email: me.email || '',
+      photo: me.photoURL || '',
+      best: s
+    };
   });
 }
 
@@ -997,40 +1015,70 @@ function renderLive() {
   const ids = Object.keys(onlineData);
   document.getElementById('liveCount').innerText = ids.length;
   const el = document.getElementById('listLive');
-  if (!fbReady) { el.innerHTML = '<div class="empty">Firebase সেটআপ করলে এখানে live player দেখা যাবে।</div>'; return; }
-  if (!ids.length) { el.innerHTML = '<div class="empty">এখন কেউ live নেই</div>'; return; }
+  if (!ids.length) {
+    el.innerHTML = '<div class="empty">এখন কেউ live নেই</div>';
+    return;
+  }
   el.innerHTML = ids.map(id => {
     const p = onlineData[id];
     const st = p.status === 'playing' ? '🎮 Playing' : '⏳ Menu';
-    return '<div class="prow' + (me && me.uid === id ? ' me' : '') + '"><span class="dot"></span><span class="nm">' +
-      esc(p.name) + '</span><span class="st">' + st + '</span></div>';
+    return '<div class="prow' + (me && me.uid === id ? ' me' : '') + '">' +
+      '<span class="dot"></span>' +
+      '<span class="nm">' + esc(p.name) + '</span>' +
+      '<span class="st">' + st + '</span>' +
+    '</div>';
   }).join('');
 }
+
 function renderBoard() {
   const el = document.getElementById('listBoard');
-  if (!fbReady) { el.innerHTML = '<div class="empty">Firebase সেটআপ করলে এখানে Top Score দেখা যাবে।</div>'; return; }
-  if (!scoreData.length) { el.innerHTML = '<div class="empty">এখনো কেউ স্কোর করেনি</div>'; return; }
+  if (!scoreData.length) {
+    el.innerHTML = '<div class="empty">এখনো কেউ স্কোর করেনি</div>';
+    return;
+  }
   const medal = ['🥇', '🥈', '🥉'];
   el.innerHTML = scoreData.map((p, i) =>
-    '<div class="prow' + (me && me.uid === p.uid ? ' me' : '') + '"><span class="rk">' + (medal[i] || (i + 1)) +
-    '</span><span class="nm">' + esc(p.name) + '</span><span class="pt">' + p.best + '</span></div>'
+    '<div class="prow' + (me && me.uid === p.uid ? ' me' : '') + '">' +
+      '<span class="rk">' + (medal[i] || (i + 1)) + '</span>' +
+      '<span class="nm">' + esc(p.name) + '</span>' +
+      '<span class="pt">' + p.best + '</span>' +
+    '</div>'
   ).join('');
 }
 
 function initOnline() {
-  setAuthUI(); renderLive(); renderBoard();
-  if (!fbReady) return;
+  setAuthUI();
+  renderLive();
+  renderBoard();
+
+  if (!firebaseConfig.apiKey || firebaseConfig.apiKey === 'YOUR_API_KEY') {
+    document.getElementById('authBox').innerHTML =
+      '<div style="color:#f87171;font-size:14px;text-align:center;">⚠ Firebase config বসাননি।</div>';
+    return;
+  }
+
   firebase.initializeApp(firebaseConfig);
   fbAuth = firebase.auth();
   fbDb = firebase.database();
+
   fbAuth.getRedirectResult().catch(() => {});
   fbAuth.onAuthStateChanged(u => {
-    me = u; setAuthUI();
+    me = u;
+    setAuthUI();
     if (u) goOnline(u);
-    renderLive(); renderBoard();
+    renderLive();
+    renderBoard();
   });
-  fbDb.ref('.info/connected').on('value', s => { if (s.val() && me) goOnline(me); });
-  fbDb.ref('online').on('value', s => { onlineData = s.val() || {}; renderLive(); });
+
+  fbDb.ref('.info/connected').on('value', s => {
+    if (s.val() && me) goOnline(me);
+  });
+
+  fbDb.ref('online').on('value', s => {
+    onlineData = s.val() || {};
+    renderLive();
+  });
+
   fbDb.ref('scores').orderByChild('best').limitToLast(20).on('value', s => {
     const arr = [];
     s.forEach(c => { arr.push(c.val()); });
@@ -1039,6 +1087,7 @@ function initOnline() {
     renderBoard();
   });
 }
+
 initOnline();
 </script>
 </body>
