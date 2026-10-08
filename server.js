@@ -5,6 +5,7 @@ const cors = require('cors');
 const app = express();
 app.use(express.json());
 app.use(cors());
+app.use(express.static(__dirname));
 
 // MongoDB Connection
 const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://highwayracing:HighwayAdmin123456780@cluster0.rstum6r.mongodb.net/highway_racing?appName=Cluster0";
