@@ -71,6 +71,7 @@
   }
   .mBtn:active { background: rgba(56, 189, 248, 0.6); border-color: #38bdf8; }
 
+  /* ===== LOGIN UI ===== */
   #authBox {
     display: flex; flex-direction: column; align-items: center; gap: 10px;
     margin-bottom: 25px; min-height: 56px;
@@ -79,9 +80,48 @@
     display: flex; align-items: center; gap: 10px;
     background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25);
     padding: 8px 16px; border-radius: 30px; font-weight: 700; font-size: 16px;
+    cursor: pointer; transition: 0.2s;
   }
+  .userChip:hover { background: rgba(56,189,248,0.25); border-color: #38bdf8; }
   .userChip img { width: 30px; height: 30px; border-radius: 50%; }
   .linkBtn { background: none; border: none; color: #fca5a5; cursor: pointer; font-size: 13px; text-decoration: underline; }
+
+  /* ===== USER INFO POPUP ===== */
+  #userPopup {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.65);
+    display: none; justify-content: center; align-items: center;
+    z-index: 100;
+  }
+  #userPopup.open { display: flex; }
+  .popupCard {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 1px solid rgba(56,189,248,0.4);
+    border-radius: 18px;
+    padding: 30px 40px;
+    min-width: 320px;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(56,189,248,0.3);
+  }
+  .popupCard img {
+    width: 80px; height: 80px; border-radius: 50%;
+    border: 3px solid #38bdf8;
+    margin-bottom: 15px;
+  }
+  .popupCard .pname {
+    font-size: 22px; font-weight: 900; color: #38bdf8;
+    margin-bottom: 5px;
+  }
+  .popupCard .pemail {
+    font-size: 14px; color: #94a3b8;
+    margin-bottom: 20px;
+  }
+  .popupCard .pclose {
+    padding: 10px 30px; font-size: 15px; font-weight: 700;
+    background: #ef4444; color: #fff; border: none; border-radius: 30px;
+    cursor: pointer;
+  }
+  .popupCard .pclose:hover { background: #dc2626; }
 
   #panelBtn {
     position: absolute; top: 20px; right: 20px; z-index: 30;
@@ -154,6 +194,16 @@
   <div id="mobileBar">
     <div class="mBtn" id="btnLeft">←</div>
     <div class="mBtn" id="btnRight">→</div>
+  </div>
+
+  <!-- USER INFO POPUP -->
+  <div id="userPopup" onclick="if(event.target.id==='userPopup') closeUserPopup()">
+    <div class="popupCard">
+      <img id="popupPhoto" src="" alt="">
+      <div class="pname" id="popupName">User</div>
+      <div class="pemail" id="popupEmail">email@gmail.com</div>
+      <button class="pclose" onclick="closeUserPopup()">Close</button>
+    </div>
   </div>
 
 <script>
@@ -896,7 +946,7 @@ function setAuthUI() {
     const nm = me.name || me.email;
     pn.innerText = nm;
     box.innerHTML =
-      '<div class="userChip">' +
+      '<div class="userChip" onclick="openUserPopup()">' +
         (me.photo ? '<img src="' + esc(me.photo) + '" referrerpolicy="no-referrer">' : '') +
         '<span>' + esc(nm) + '</span>' +
       '</div>' +
@@ -908,6 +958,18 @@ function setAuthUI() {
     startBtn.style.display = 'none';
     setTimeout(renderGoogleBtn, 300);
   }
+}
+
+function openUserPopup() {
+  if (!me) return;
+  document.getElementById('popupPhoto').src = me.photo || '';
+  document.getElementById('popupName').innerText = me.name || 'User';
+  document.getElementById('popupEmail').innerText = me.email || '';
+  document.getElementById('userPopup').classList.add('open');
+}
+
+function closeUserPopup() {
+  document.getElementById('userPopup').classList.remove('open');
 }
 
 function renderGoogleBtn() {
