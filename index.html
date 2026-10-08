@@ -926,10 +926,10 @@ function render() {
 }
 
 // =====================================================
-// TRAFFIC LOGIC (RANDOM LANE + RANDOM LANE CHANGE)
+// TRAFFIC LOGIC (Safe gap, no two cars side-by-side)
 // =====================================================
-const LANES = [-0.25, 0.25];   // left lane, right lane
-const LANE_SPEED = [30, 21];   // different speeds per lane
+const LANES = [-0.25, 0.25];
+const LANE_SPEED = [30, 21];
 
 function update() {
   frame++;
@@ -942,7 +942,7 @@ function update() {
   speedVal.innerText = Math.floor(speed * 90);
   scoreVal.innerText = score;
 
-  // ----- PLAYER MOVEMENT -----
+  // ===== PLAYER MOVEMENT =====
   if (keys.left)  playerX -= 0.028;
   if (keys.right) playerX += 0.028;
   if (playerX < -0.30) playerX = -0.30;
@@ -950,40 +950,43 @@ function update() {
   const targetTilt = ((keys.right ? 1 : 0) - (keys.left ? 1 : 0)) * 0.05;
   tilt += (targetTilt - tilt) * 0.15;
 
-  // ----- SPAWN TRAFFIC -----
+  // ===== SPAWN TRAFFIC (no two cars side-by-side or too close) =====
   if (Math.random() < 0.022 + speed * 0.005) {
     const li = Math.floor(Math.random() * LANES.length);
-    // Only spawn if no other car in same lane is too close to spawn point
-    if (!cars.some(c => c.lane === li && c.z > 2800)) {
+
+    // Same lane: at least 2500 units gap
+    const sameLaneBlocked = cars.some(c => c.lane === li && c.z > 4000 - 2500);
+    // Other lane: at least 800 units gap (avoid side-by-side)
+    const otherLaneBlocked = cars.some(c => c.lane !== li && c.z > 4000 - 800);
+
+    if (!sameLaneBlocked && !otherLaneBlocked) {
       const type = pickTrafficType();
       const color = type === 'truck' ? TRUCK_COLORS[Math.floor(Math.random() * TRUCK_COLORS.length)]
                                      : TRAFFIC_COLORS[Math.floor(Math.random() * TRAFFIC_COLORS.length)];
-      // Random chance for the new car to change lanes while coming
-      const willChangeLane = Math.random() < 0.5;  // 50% chance
+
+      const willChangeLane = Math.random() < 0.5;
       cars.push({
         x: LANES[li],
         z: 4000,
         v: LANE_SPEED[li],
         lane: li,
         targetLane: willChangeLane ? (1 - li) : li,
-        changingIn: willChangeLane ? Math.floor(rand(40, 150)) : -1,  // frames until lane change
+        changingIn: willChangeLane ? Math.floor(rand(60, 180)) : -1,
         changing: false,
         sp: getCarSprite(type, color)
       });
     }
   }
 
-  // ----- MOVE TRAFFIC + LANE CHANGE + COLLISION -----
+  // ===== MOVE TRAFFIC + LANE CHANGE + COLLISION =====
   for (let i = cars.length - 1; i >= 0; i--) {
     const c = cars[i];
     const step = speed * 35 - c.v;
     c.z -= step;
 
-    // If lane change scheduled, decrement counter
     if (c.changingIn > 0) c.changingIn--;
     if (c.changingIn === 0 && !c.changing) c.changing = true;
 
-    // Smoothly move x toward target lane
     if (c.changing) {
       const targetX = LANES[c.targetLane];
       const diff = targetX - c.x;
@@ -996,7 +999,6 @@ function update() {
       }
     }
 
-    // Collision check
     const dz = Math.abs(c.z - PLAYER_Z);
     const dx = Math.abs(c.x - playerX);
     if (dz < 55 && dx < 0.28) {
